@@ -1,6 +1,8 @@
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 
 #define MAX_TASKS 21
 #define MAX_LENGTH 121
@@ -14,9 +16,27 @@ typedef struct {
 Task tasks[MAX_TASKS];
 int task_count = 0;
 
+char *get_task_file_path() {
+  const char *home = getenv("HOME"); // gets your home directory
+  if (!home)
+    home = "."; // fallback
+
+  static char path[512];
+  snprintf(path, sizeof(path), "%s/.taskc", home);
+
+  // create ~/.taskc if it doesn’t exist
+  mkdir(path, 0755);
+
+  // append /tasks.txt
+  strncat(path, "/" FILE_NAME, sizeof(path) - strlen(path) - 1);
+
+  return path;
+}
+
 // Save tasks to file
 void save_tasks() {
-  FILE *file = fopen(FILE_NAME, "w");
+  const char *file_path = get_task_file_path();
+  FILE *file = fopen(file_path, "w");
   if (!file) {
     printf("Error saving tasks!\n");
     return;
@@ -29,7 +49,8 @@ void save_tasks() {
 
 // Load tasks from file
 void load_tasks() {
-  FILE *file = fopen(FILE_NAME, "r");
+  const char *file_path = get_task_file_path();
+  FILE *file = fopen(file_path, "r");
   if (!file)
     return; // no file yet, skip
 
